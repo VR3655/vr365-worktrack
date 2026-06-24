@@ -178,13 +178,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
 
       <!-- IMPORT -->
       <div id="tab-import" class="tab">
-        <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
-        <label for="csv-input" class="upload-zone" id="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)" style="display:block;cursor:pointer">
-          <div class="upload-sf-icon">📂</div>
-          <div class="upload-title">Import Breezeway export</div>
-          <div class="upload-sub">Breezeway → Tasks → Export → Custom export<br>then drop the CSV here or click anywhere to browse</div>
-          <span class="upload-cta" style="display:inline-flex;margin-top:20px">Choose file</span>
-        </label>
+        <div class="card" style="padding:40px 24px;text-align:center;margin-bottom:16px">
+          <div style="width:60px;height:60px;background:linear-gradient(135deg,#007AFF,#5856D6);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px">📂</div>
+          <div style="font-size:20px;font-weight:600;margin-bottom:8px">Import Breezeway CSV</div>
+          <div style="font-size:14px;color:var(--label3);margin-bottom:24px">Breezeway → Tasks → Export → Custom export</div>
+          <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+          <button onclick="document.getElementById('csv-input').click()" style="background:var(--blue);color:white;border:none;padding:14px 32px;border-radius:22px;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)">📁 Choose CSV File</button>
+          <div id="selected-file" style="margin-top:12px;font-size:13px;color:var(--label3)"></div>
+        </div>
+        <div id="import-result"></div>
         <div id="import-result"></div>
         <div class="card">
           <div class="card-header" style="margin-bottom:12px"><div class="card-title">Columns used</div></div>
@@ -520,6 +522,8 @@ function dragLeave(){document.getElementById('drop-zone').classList.remove('drag
 function dropFile(e){e.preventDefault();dragLeave();const f=e.dataTransfer.files[0];if(f)handleFile(f)}
 
 function handleFile(file){
+  if(!file)return;
+  document.getElementById('selected-file').textContent = '📄 ' + file.name;
   Papa.parse(file,{header:true,skipEmptyLines:true,complete:function(results){
     const tasks=results.data.map(r=>({
       title:(r['Task title']||'').trim(),
