@@ -653,11 +653,21 @@ function handleFile(file){
       billTo:(r['Bill to']||'').trim(),
       reportLink:(r['Task report link']||'').trim()
     }));
-    allTasks=tasks;
-    localStorage.setItem('wt5_tasks',JSON.stringify(tasks));
+
+    // Merge with existing — upsert by reportLink
+    const existingIds=new Set(allTasks.map(t=>t.reportLink).filter(Boolean));
+    const newCount=tasks.filter(t=>t.reportLink&&!existingIds.has(t.reportLink)).length;
+    const updCount=tasks.filter(t=>t.reportLink&&existingIds.has(t.reportLink)).length;
+
+    // Merge into allTasks
+    const taskMap={};
+    allTasks.forEach(t=>{if(t.reportLink)taskMap[t.reportLink]=t;});
+    tasks.forEach(t=>{if(t.reportLink)taskMap[t.reportLink]=t;else allTasks.push(t);});
+    allTasks=Object.values(taskMap);
+    localStorage.setItem('wt5_tasks',JSON.stringify(allTasks));
     buildPeople();buildPeopleNav();
     saveTasks(tasks);
-    const noRate=tasks.filter(t=>!hasRate(t)).length;
+    const noRate=allTasks.filter(t=>!hasRate(t)).length;
     document.getElementById('import-result').innerHTML=`
       <div style="background:var(--bg2);border-radius:var(--radius-lg);overflow:hidden;margin-top:16px">
         <div style="padding:16px;border-bottom:0.5px solid var(--sep);display:flex;align-items:center;gap:12px">
@@ -665,30 +675,34 @@ function handleFile(file){
           <div><div style="font-size:17px;font-weight:600">Import successful</div><div style="font-size:13px;color:var(--label3);margin-top:2px">${file.name}</div></div>
         </div>
         <div class="stat-strip">
-          <div class="stat-strip-item"><div class="stat-strip-val" style="color:var(--blue)">${tasks.length}</div><div class="stat-strip-label">Tasks</div></div>
-          <div class="stat-strip-item"><div class="stat-strip-val" style="color:var(--green)">${people.length}</div><div class="stat-strip-label">People</div></div>
+          <div class="stat-strip-item"><div class="stat-strip-val" style="color:var(--blue)">${newCount}</div><div class="stat-strip-label">New tasks</div></div>
+          <div class="stat-strip-item"><div class="stat-strip-val" style="color:var(--orange)">${updCount}</div><div class="stat-strip-label">Updated</div></div>
+          <div class="stat-strip-item"><div class="stat-strip-val" style="color:var(--green)">${allTasks.length}</div><div class="stat-strip-label">Total</div></div>
           <div class="stat-strip-item"><div class="stat-strip-val" style="color:var(--red)">${noRate}</div><div class="stat-strip-label">No rate ⚠️</div></div>
         </div>
       </div>`;
-    document.getElementById('topbar-chip').textContent=tasks.length+' tasks';
+    document.getElementById('topbar-chip').textContent=allTasks.length+' tasks';
     document.getElementById('topbar-chip').style.display='block';
-    document.getElementById('nb-total').textContent=tasks.length;
-    toast('Imported '+tasks.length+' tasks · '+noRate+' missing rate');
+    document.getElementById('nb-total').textContent=allTasks.length;
+    toast(`${newCount} new · ${updCount} updated · ${allTasks.length} total`);
     renderDashboard();
   }});
 }
 
 async function saveTasks(tasks){
   try{
-    await db.from('tasks').delete().neq('id',0);
     const rows=tasks.map(t=>({
+      breezeway_id:t.reportLink?t.reportLink.split('/task/report/')[1]||t.reportLink:null,
       title:t.title,property:t.property,department:t.department,
       assignees:t.assignees,completed_date:t.completedDate,status:t.status,
       tags:t.tags,estimated_time:t.estimatedTime,rate_type:t.rateType,
       rate_paid:t.ratePaid||0,total_cost:t.totalCost||0,
       bill_to:t.billTo,report_link:t.reportLink
     }));
-    const{error}=await db.from('tasks').insert(rows);
+    const{error}=await db.from('tasks').upsert(rows,{
+      onConflict:'breezeway_id',
+      ignoreDuplicates:false
+    });
     if(error)console.error('Supabase save error:',error);
     else toast('Saved to cloud ☁️');
   }catch(e){console.error(e);}
