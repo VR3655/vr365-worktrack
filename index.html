@@ -182,11 +182,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
           <div style="width:60px;height:60px;background:linear-gradient(135deg,#007AFF,#5856D6);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px">📂</div>
           <div style="font-size:20px;font-weight:600;margin-bottom:8px">Import Breezeway CSV</div>
           <div style="font-size:14px;color:var(--label3);margin-bottom:24px">Breezeway → Tasks → Export → Custom export</div>
-          <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
-          <button onclick="document.getElementById('csv-input').click()" style="background:var(--blue);color:white;border:none;padding:14px 32px;border-radius:22px;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)">📁 Choose CSV File</button>
+          <label for="csv-input" style="display:inline-block;background:#007AFF;color:white;padding:14px 32px;border-radius:22px;font-size:16px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📁 Choose CSV File</label>
+          <input type="file" id="csv-input" accept=".csv" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px" onchange="handleFile(this.files[0])">
           <div id="selected-file" style="margin-top:12px;font-size:13px;color:var(--label3)"></div>
         </div>
-        <div id="import-result"></div>
         <div id="import-result"></div>
         <div class="card">
           <div class="card-header" style="margin-bottom:12px"><div class="card-title">Columns used</div></div>
