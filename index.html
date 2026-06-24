@@ -637,8 +637,8 @@ function renderReports(){
 function handleFile(file){
   if(!file)return;
   document.getElementById('selected-file').textContent='📄 '+file.name;
-  Papa.parse(file,{header:true,skipEmptyLines:true,complete:function(results){
-    const tasks=results.data.map(r=>({
+  Papa.parse(file,{header:true,skipEmptyLines:true,complete:async function(results){
+    const newTasks=results.data.map(r=>({
       title:(r['Task title']||'').trim(),
       property:(r['Property']||'').trim(),
       department:(r['Department']||'').trim(),
@@ -654,19 +654,35 @@ function handleFile(file){
       reportLink:(r['Task report link']||'').trim()
     }));
 
-    // Merge with existing — upsert by reportLink
-    const existingIds=new Set(allTasks.map(t=>t.reportLink).filter(Boolean));
-    const newCount=tasks.filter(t=>t.reportLink&&!existingIds.has(t.reportLink)).length;
-    const updCount=tasks.filter(t=>t.reportLink&&existingIds.has(t.reportLink)).length;
+    // Always load fresh from Supabase first
+    let existing=[];
+    try{
+      const{data}=await db.from('tasks').select('*').order('id');
+      if(data&&data.length){
+        existing=data.map(r=>({
+          title:r.title||'',property:r.property||'',department:r.department||'',
+          assignees:r.assignees||'',completedDate:r.completed_date||'',status:r.status||'',
+          tags:r.tags||'',estimatedTime:r.estimated_time||'',rateType:r.rate_type||'',
+          ratePaid:r.rate_paid||0,totalCost:r.total_cost||0,
+          billTo:r.bill_to||'',reportLink:r.report_link||''
+        }));
+      }
+    }catch(e){console.error('Load error:',e);}
 
-    // Merge into allTasks
+    // Count new vs updated
+    const existingIds=new Set(existing.map(t=>t.reportLink).filter(Boolean));
+    const newCount=newTasks.filter(t=>t.reportLink&&!existingIds.has(t.reportLink)).length;
+    const updCount=newTasks.filter(t=>t.reportLink&&existingIds.has(t.reportLink)).length;
+
+    // Merge: start with existing, overwrite with new
     const taskMap={};
-    allTasks.forEach(t=>{if(t.reportLink)taskMap[t.reportLink]=t;});
-    tasks.forEach(t=>{if(t.reportLink)taskMap[t.reportLink]=t;else allTasks.push(t);});
+    existing.forEach(t=>{if(t.reportLink)taskMap[t.reportLink]=t;});
+    newTasks.forEach(t=>{if(t.reportLink)taskMap[t.reportLink]=t;});
     allTasks=Object.values(taskMap);
+
     localStorage.setItem('wt5_tasks',JSON.stringify(allTasks));
     buildPeople();buildPeopleNav();
-    saveTasks(tasks);
+    saveTasks(newTasks);
     const noRate=allTasks.filter(t=>!hasRate(t)).length;
     document.getElementById('import-result').innerHTML=`
       <div style="background:var(--bg2);border-radius:var(--radius-lg);overflow:hidden;margin-top:16px">
