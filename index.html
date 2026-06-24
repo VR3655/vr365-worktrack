@@ -682,7 +682,7 @@ function handleFile(file){
 
     localStorage.setItem('wt5_tasks',JSON.stringify(allTasks));
     buildPeople();buildPeopleNav();
-    saveTasks(newTasks);
+    await saveTasks(allTasks);
     const noRate=allTasks.filter(t=>!hasRate(t)).length;
     document.getElementById('import-result').innerHTML=`
       <div style="background:var(--bg2);border-radius:var(--radius-lg);overflow:hidden;margin-top:16px">
@@ -714,13 +714,19 @@ async function saveTasks(tasks){
       tags:t.tags,estimated_time:t.estimatedTime,rate_type:t.rateType,
       rate_paid:t.ratePaid||0,total_cost:t.totalCost||0,
       bill_to:t.billTo,report_link:t.reportLink
-    }));
-    const{error}=await db.from('tasks').upsert(rows,{
-      onConflict:'breezeway_id',
-      ignoreDuplicates:false
-    });
-    if(error)console.error('Supabase save error:',error);
-    else toast('Saved to cloud ☁️');
+    })).filter(r=>r.breezeway_id);
+
+    // Upsert in batches of 100
+    const batchSize=100;
+    for(let i=0;i<rows.length;i+=batchSize){
+      const batch=rows.slice(i,i+batchSize);
+      const{error}=await db.from('tasks').upsert(batch,{
+        onConflict:'breezeway_id',
+        ignoreDuplicates:false
+      });
+      if(error){console.error('Supabase batch error:',error);return;}
+    }
+    toast('Saved to cloud ☁️');
   }catch(e){console.error(e);}
 }
 
