@@ -178,21 +178,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
 
       <!-- IMPORT -->
       <div id="tab-import" class="tab">
-        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('csv-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)">
+        <div class="upload-zone" id="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)">
           <div class="upload-sf-icon">📂</div>
           <div class="upload-title">Import Breezeway export</div>
           <div class="upload-sub">Breezeway → Tasks → Export → Custom export<br>then drop the CSV here</div>
-          <button class="upload-cta" onclick="event.stopPropagation();document.getElementById('csv-input').click()">Choose file</button>
+          <button class="upload-cta" onclick="document.getElementById('csv-input').click()">Choose file</button>
         </div>
         <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
         <div id="import-result"></div>
         <div class="card">
           <div class="card-header" style="margin-bottom:12px"><div class="card-title">Columns used</div></div>
-          ${['Task title','Property','Department','Assignees','Due date','Status','Total cost','Bill to','Task tags','Estimated time','Task report link'].map(c=>`
-          <div class="list-row" style="cursor:default">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
-            <div class="list-row-content"><div class="list-row-title" style="font-size:14px">${c}</div></div>
-          </div>`).join('')}
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Task title</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Property</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Department</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Assignees</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Due date</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Status</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Total cost</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Bill to</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Task tags</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Estimated time</div></div></div>
+          <div class="list-row" style="cursor:default;border:none"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Task report link</div></div></div>
         </div>
       </div>
 
