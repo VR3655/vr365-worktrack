@@ -234,6 +234,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://qtbuhtkqsjabumqlsvbv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0YnVodGtxc2phYnVtcWxzdmJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMTk0NzcsImV4cCI6MjA5Nzg5NTQ3N30.Qj_fKVMqK02K99-NNjZdYxggP3z_Fx_UmRdIq8J89aQ';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+
 <script>
 let allTasks=JSON.parse(localStorage.getItem('wt4_tasks')||'[]');
 let people=[];
@@ -523,6 +531,7 @@ function handleFile(file){
     allTasks=tasks;
     localStorage.setItem('wt4_tasks',JSON.stringify(tasks));
     buildPeople();buildPeopleNav();
+    saveTasks(tasks);
     const bill=tasks.filter(t=>isBillable(t));
     document.getElementById('import-result').innerHTML=`
       <div style="background:var(--bg2);border-radius:var(--radius-lg);overflow:hidden;margin-top:16px">
@@ -544,18 +553,50 @@ function handleFile(file){
   }});
 }
 
-function init(){
-  document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  const mo=new Date().toISOString().substring(0,7);
-  document.getElementById('r-month').value=mo;
-  document.getElementById('at-month').value=mo;
-  if(allTasks.length){
+async function saveTasks(tasks){
+  try {
+    await db.from('tasks').delete().neq('id',0);
+    const rows = tasks.map(t=>({
+      title:t.title, property:t.property, department:t.department,
+      assignees:t.assignees, due_date:t.dueDate, status:t.status,
+      cost:t.cost||0, bill_to:t.billTo, tags:t.tags,
+      estimated_time:t.estimatedTime, report_link:t.reportLink
+    }));
+    const {error} = await db.from('tasks').insert(rows);
+    if(error) console.error('Supabase save error:',error);
+    else toast('Saved to cloud ☁️');
+  } catch(e){ console.error(e); }
+}
+
+async function loadTasks(){
+  try {
+    const {data,error} = await db.from('tasks').select('*').order('id');
+    if(error || !data || !data.length){
+      const local = JSON.parse(localStorage.getItem('wt4_tasks')||'[]');
+      if(local.length){ allTasks=local; buildPeople();buildPeopleNav();renderDashboard(); }
+      return;
+    }
+    allTasks = data.map(r=>({
+      title:r.title||'', property:r.property||'', department:r.department||'',
+      assignees:r.assignees||'', dueDate:r.due_date||'', status:r.status||'',
+      cost:r.cost||0, billTo:r.bill_to||'', tags:r.tags||'',
+      estimatedTime:r.estimated_time||'', reportLink:r.report_link||''
+    }));
+    localStorage.setItem('wt4_tasks',JSON.stringify(allTasks));
     buildPeople();buildPeopleNav();
     document.getElementById('topbar-chip').textContent=allTasks.length+' tasks';
     document.getElementById('topbar-chip').style.display='block';
     document.getElementById('nb-total').textContent=allTasks.length;
     renderDashboard();
-  }
+  } catch(e){ console.error(e); }
+}
+
+function init(){
+  document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const mo=new Date().toISOString().substring(0,7);
+  document.getElementById('r-month').value=mo;
+  document.getElementById('at-month').value=mo;
+  loadTasks();
 }
 init();
 </script>
