@@ -182,7 +182,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
           <div class="upload-sf-icon">📂</div>
           <div class="upload-title">Import Breezeway export</div>
           <div class="upload-sub">Breezeway → Tasks → Export → Custom export<br>then drop the CSV here</div>
-          <button class="upload-cta" onclick="event.stopPropagation()">Choose file</button>
+          <button class="upload-cta" onclick="event.stopPropagation();document.getElementById('csv-input').click()">Choose file</button>
         </div>
         <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
         <div id="import-result"></div>
