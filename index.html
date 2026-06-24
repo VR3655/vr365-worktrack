@@ -178,13 +178,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
 
       <!-- IMPORT -->
       <div id="tab-import" class="tab">
-        <div class="upload-zone" id="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)">
+        <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+        <label for="csv-input" class="upload-zone" id="drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)" style="display:block;cursor:pointer">
           <div class="upload-sf-icon">📂</div>
           <div class="upload-title">Import Breezeway export</div>
-          <div class="upload-sub">Breezeway → Tasks → Export → Custom export<br>then drop the CSV here</div>
-          <button class="upload-cta" onclick="document.getElementById('csv-input').click()">Choose file</button>
-        </div>
-        <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+          <div class="upload-sub">Breezeway → Tasks → Export → Custom export<br>then drop the CSV here or click anywhere to browse</div>
+          <span class="upload-cta" style="display:inline-flex;margin-top:20px">Choose file</span>
+        </label>
         <div id="import-result"></div>
         <div class="card">
           <div class="card-header" style="margin-bottom:12px"><div class="card-title">Columns used</div></div>
