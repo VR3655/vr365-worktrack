@@ -732,13 +732,25 @@ async function saveTasks(tasks){
 
 async function loadTasks(){
   try{
-    const{data,error}=await db.from('tasks').select('*').order('id');
-    if(error||!data||!data.length){
+    // Load all rows with pagination
+    let allData=[];
+    let from=0;
+    const pageSize=1000;
+    while(true){
+      const{data,error}=await db.from('tasks').select('*').order('id').range(from,from+pageSize-1);
+      if(error){console.error('Load error:',error);break;}
+      if(!data||data.length===0)break;
+      allData=[...allData,...data];
+      if(data.length<pageSize)break;
+      from+=pageSize;
+    }
+    console.log('Loaded from Supabase:',allData.length,'rows');
+    if(!allData.length){
       const local=JSON.parse(localStorage.getItem('wt5_tasks')||'[]');
       if(local.length){allTasks=local;buildPeople();buildPeopleNav();renderDashboard();}
       return;
     }
-    allTasks=data.map(r=>({
+    allTasks=allData.map(r=>({
       title:r.title||'',property:r.property||'',department:r.department||'',
       assignees:r.assignees||'',completedDate:r.completed_date||'',status:r.status||'',
       tags:r.tags||'',estimatedTime:r.estimated_time||'',rateType:r.rate_type||'',
