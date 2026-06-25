@@ -194,8 +194,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:
         <div id="import-result"></div>
         <div class="card">
           <div class="card-header" style="margin-bottom:8px"><div class="card-title">Columns used</div></div>
-          ${['Task title','Property','Department','Assignees','Completed date','Status','Task tags','Estimated time','Rate type','Rate paid','Total cost','Bill to','Task report link'].map(c=>`
-          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">${c}</div></div></div>`).join('')}
+        <div class="card">
+          <div class="card-header" style="margin-bottom:8px"><div class="card-title">Columns used</div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Task title</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Property</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Department</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Assignees</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Completed date</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Status</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Task tags</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Estimated time</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Rate type</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Rate paid</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Total cost</div></div></div>
+          <div class="list-row" style="cursor:default"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Bill to</div></div></div>
+          <div class="list-row" style="cursor:default;border:none"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div class="list-row-content"><div class="list-row-title" style="font-size:14px">Task report link</div></div></div>
         </div>
       </div>
 
@@ -708,26 +721,33 @@ function handleFile(file){
 async function saveTasks(tasks){
   try{
     const rows=tasks.map(t=>({
-      breezeway_id:t.reportLink?t.reportLink.split('/task/report/')[1]||t.reportLink:null,
+      breezeway_id:t.reportLink?t.reportLink.split('/task/report/').pop():null,
       title:t.title,property:t.property,department:t.department,
-      assignees:t.assignees,completed_date:t.completedDate,status:t.status,
+      assignees:t.assignees,completed_date:t.completedDate||null,status:t.status,
       tags:t.tags,estimated_time:t.estimatedTime,rate_type:t.rateType,
       rate_paid:t.ratePaid||0,total_cost:t.totalCost||0,
       bill_to:t.billTo,report_link:t.reportLink
-    })).filter(r=>r.breezeway_id);
+    })).filter(r=>r.breezeway_id&&r.breezeway_id.length>0);
 
-    // Upsert in batches of 100
-    const batchSize=100;
+    console.log('Saving',rows.length,'rows to Supabase');
+
+    // Upsert in batches of 50
+    const batchSize=50;
+    let saved=0;
     for(let i=0;i<rows.length;i+=batchSize){
       const batch=rows.slice(i,i+batchSize);
-      const{error}=await db.from('tasks').upsert(batch,{
-        onConflict:'breezeway_id',
-        ignoreDuplicates:false
+      const{error,data}=await db.from('tasks').upsert(batch,{
+        onConflict:'breezeway_id'
       });
-      if(error){console.error('Supabase batch error:',error);return;}
+      if(error){
+        console.error('Batch error details:',JSON.stringify(error));
+        return;
+      }
+      saved+=batch.length;
     }
+    console.log('Saved',saved,'rows successfully');
     toast('Saved to cloud ☁️');
-  }catch(e){console.error(e);}
+  }catch(e){console.error('Save exception:',e);}
 }
 
 async function loadTasks(){
